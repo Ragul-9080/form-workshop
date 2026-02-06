@@ -43,20 +43,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setConfigLoading(true);
     try {
       const updates = [
-        { key: 'instagram_url', value: config.instagram_url },
-        { key: 'linkedin_url', value: config.linkedin_url },
-        { key: 'whatsapp_url', value: config.whatsapp_url },
+        { key: 'instagram_url', value: config.instagram_url || '' },
+        { key: 'linkedin_url', value: config.linkedin_url || '' },
+        { key: 'whatsapp_url', value: config.whatsapp_url || '' },
       ];
 
       for (const update of updates) {
-        if (update.value) {
-          await supabase.from('app_config').upsert(update);
-        }
+        const { error } = await supabase.from('app_config').upsert(update);
+        if (error) throw error;
       }
       alert('Links updated successfully!');
+      fetchConfig();
     } catch (err) {
       console.error('Error saving config:', err);
-      alert('Failed to save links');
+      alert(`Failed to save links: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setConfigLoading(false);
     }
@@ -197,18 +197,40 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
             <p className="text-cyprus/60 text-sm mb-1">Total Responses</p>
             <p className="text-3xl font-bold text-cyprus">{feedbacks.length}</p>
           </div>
           <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
-            <p className="text-cyprus/60 text-sm mb-1">Average Rating</p>
+            <p className="text-cyprus/60 text-sm mb-1">Average Overall</p>
             <p className="text-3xl font-bold text-cyprus">
               {feedbacks.filter((f) => f.rating).length > 0
                 ? (
                   feedbacks.reduce((acc, f) => acc + (f.rating || 0), 0) /
                   feedbacks.filter((f) => f.rating).length
+                ).toFixed(1)
+                : 'N/A'}
+            </p>
+          </div>
+          <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
+            <p className="text-cyprus/60 text-sm mb-1">Avg. Ragul</p>
+            <p className="text-3xl font-bold text-cyprus">
+              {feedbacks.filter((f) => f.rating_ragul).length > 0
+                ? (
+                  feedbacks.reduce((acc, f) => acc + (f.rating_ragul || 0), 0) /
+                  feedbacks.filter((f) => f.rating_ragul).length
+                ).toFixed(1)
+                : 'N/A'}
+            </p>
+          </div>
+          <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
+            <p className="text-cyprus/60 text-sm mb-1">Avg. Ashvini</p>
+            <p className="text-3xl font-bold text-cyprus">
+              {feedbacks.filter((f) => f.rating_ashvini).length > 0
+                ? (
+                  feedbacks.reduce((acc, f) => acc + (f.rating_ashvini || 0), 0) /
+                  feedbacks.filter((f) => f.rating_ashvini).length
                 ).toFixed(1)
                 : 'N/A'}
             </p>
@@ -338,8 +360,24 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   </div>
 
                   {feedback.rating && (
-                    <div className={`text-3xl font-bold ${getRatingColor(feedback.rating)}`}>
-                      {feedback.rating}/5
+                    <div className="text-right">
+                      <div className={`text-3xl font-bold ${getRatingColor(feedback.rating)}`}>
+                        {feedback.rating}/5
+                      </div>
+                      <div className="flex gap-4 mt-1">
+                        {feedback.rating_ragul && (
+                          <div className="text-xs">
+                            <span className="text-cyprus/40">Ragul:</span>
+                            <span className={`ml-1 font-semibold ${getRatingColor(feedback.rating_ragul)}`}>{feedback.rating_ragul}</span>
+                          </div>
+                        )}
+                        {feedback.rating_ashvini && (
+                          <div className="text-xs">
+                            <span className="text-cyprus/40">Ashvini:</span>
+                            <span className={`ml-1 font-semibold ${getRatingColor(feedback.rating_ashvini)}`}>{feedback.rating_ashvini}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
