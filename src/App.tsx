@@ -9,6 +9,7 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>('form');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [keyPresses, setKeyPresses] = useState<string[]>([]);
 
   useEffect(() => {
     const adminSession = localStorage.getItem('admin_session');
@@ -16,6 +17,21 @@ function App() {
       setCurrentView('admin-dashboard');
     }
   }, []);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'a') {
+        const newKeyPresses = [...keyPresses, 'a'].slice(-2);
+        setKeyPresses(newKeyPresses);
+        if (newKeyPresses.length === 2 && newKeyPresses.every(k => k === 'a')) {
+          setCurrentView('admin-login');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [keyPresses]);
 
   const handleAdminLogin = (password: string) => {
     setIsLoading(true);
@@ -41,19 +57,7 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      {currentView === 'form' && (
-        <div>
-          <FeedbackForm />
-          <div className="fixed bottom-6 right-6">
-            <button
-              onClick={() => setCurrentView('admin-login')}
-              className="bg-gradient-to-r from-slate-700 to-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-slate-600 hover:to-slate-700 transition-all shadow-lg border border-white/10"
-            >
-              Admin
-            </button>
-          </div>
-        </div>
-      )}
+      {currentView === 'form' && <FeedbackForm />}
       {currentView === 'admin-login' && (
         <AdminLogin
           onLogin={handleAdminLogin}
