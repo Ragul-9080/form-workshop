@@ -3,7 +3,9 @@ import { FeedbackForm } from './components/FeedbackForm';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLogin } from './components/AdminLogin';
 
-type AppView = 'form' | 'admin-login' | 'admin-dashboard';
+import { ThankYou } from './components/ThankYou';
+
+type AppView = 'form' | 'admin-login' | 'admin-dashboard' | 'thank-you';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('form');
@@ -20,12 +22,11 @@ function App() {
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'a') {
-        const newKeyPresses = [...keyPresses, 'a'].slice(-2);
-        setKeyPresses(newKeyPresses);
-        if (newKeyPresses.length === 2 && newKeyPresses.every(k => k === 'a')) {
-          setCurrentView('admin-login');
-        }
+      const key = e.key.toLowerCase();
+      const newKeyPresses = [...keyPresses, key].slice(-5);
+      setKeyPresses(newKeyPresses);
+      if (newKeyPresses.length === 5 && newKeyPresses.every(k => k === 'x')) {
+        setCurrentView('admin-login');
       }
     };
 
@@ -57,7 +58,10 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      {currentView === 'form' && <FeedbackForm />}
+      {currentView === 'form' && <FeedbackForm onSuccess={() => setCurrentView('thank-you')} />}
+      {currentView === 'thank-you' && (
+        <ThankYou onBackToHome={() => setCurrentView('form')} />
+      )}
       {currentView === 'admin-login' && (
         <AdminLogin
           onLogin={handleAdminLogin}
