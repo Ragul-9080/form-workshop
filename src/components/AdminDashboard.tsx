@@ -85,8 +85,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         department: '',
         feedback: '',
         rating: 5,
-        rating_ragul: undefined,
-        rating_ashvini: undefined
       });
     }
     setShowModal(true);
@@ -197,7 +195,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
             <p className="text-cyprus/60 text-sm mb-1">Total Responses</p>
             <p className="text-3xl font-bold text-cyprus">{feedbacks.length}</p>
@@ -213,28 +211,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 : 'N/A'}
             </p>
           </div>
-          <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
-            <p className="text-cyprus/60 text-sm mb-1">Avg. Ragul</p>
-            <p className="text-3xl font-bold text-cyprus">
-              {feedbacks.filter((f) => f.rating_ragul).length > 0
-                ? (
-                  feedbacks.reduce((acc, f) => acc + (f.rating_ragul || 0), 0) /
-                  feedbacks.filter((f) => f.rating_ragul).length
-                ).toFixed(1)
-                : 'N/A'}
-            </p>
-          </div>
-          <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
-            <p className="text-cyprus/60 text-sm mb-1">Avg. Ashvini</p>
-            <p className="text-3xl font-bold text-cyprus">
-              {feedbacks.filter((f) => f.rating_ashvini).length > 0
-                ? (
-                  feedbacks.reduce((acc, f) => acc + (f.rating_ashvini || 0), 0) /
-                  feedbacks.filter((f) => f.rating_ashvini).length
-                ).toFixed(1)
-                : 'N/A'}
-            </p>
-          </div>
+
           <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
             <p className="text-cyprus/60 text-sm mb-1">With Ratings</p>
             <p className="text-3xl font-bold text-cyprus">{feedbacks.filter((f) => f.rating).length}</p>
@@ -364,20 +341,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       <div className={`text-3xl font-bold ${getRatingColor(feedback.rating)}`}>
                         {feedback.rating}/5
                       </div>
-                      <div className="flex gap-4 mt-1">
-                        {feedback.rating_ragul && (
-                          <div className="text-xs">
-                            <span className="text-cyprus/40">Ragul:</span>
-                            <span className={`ml-1 font-semibold ${getRatingColor(feedback.rating_ragul)}`}>{feedback.rating_ragul}</span>
-                          </div>
-                        )}
-                        {feedback.rating_ashvini && (
-                          <div className="text-xs">
-                            <span className="text-cyprus/40">Ashvini:</span>
-                            <span className={`ml-1 font-semibold ${getRatingColor(feedback.rating_ashvini)}`}>{feedback.rating_ashvini}</span>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -411,115 +374,96 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </div>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-cyprus/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-cyprus/10 rounded-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-cyprus">
-                {editingFeedback ? 'Edit Feedback' : 'Add Feedback'}
-              </h2>
+      {
+        showModal && (
+          <div className="fixed inset-0 bg-cyprus/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white border border-cyprus/10 rounded-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-cyprus">
+                  {editingFeedback ? 'Edit Feedback' : 'Add Feedback'}
+                </h2>
 
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-cyprus/50 hover:text-cyprus"
-              >
-                <X size={24} />
-
-              </button>
-            </div>
-
-            <form onSubmit={handleModalSubmit} className="space-y-4">
-              <div>
-                <label className="block text-cyprus/70 text-sm mb-1">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name || ''}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
-                />
-
-              </div>
-              <div>
-                <label className="block text-cyprus/70 text-sm mb-1">Department</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.department || ''}
-                  onChange={e => setFormData({ ...formData, department: e.target.value })}
-                  className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
-                />
-
-              </div>
-              <div>
-                <label className="block text-cyprus/70 text-sm mb-1">Feedback</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.feedback || ''}
-                  onChange={e => setFormData({ ...formData, feedback: e.target.value })}
-                  className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
-                />
-
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-cyprus/70 text-sm mb-1">Overall</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={formData.rating || ''}
-                    onChange={e => setFormData({ ...formData, rating: parseInt(e.target.value) || undefined })}
-                    className="w-full bg-white border border-cyprus/20 rounded p-2 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-cyprus/70 text-sm mb-1">Ragul</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={formData.rating_ragul || ''}
-                    onChange={e => setFormData({ ...formData, rating_ragul: parseInt(e.target.value) || undefined })}
-                    className="w-full bg-white border border-cyprus/20 rounded p-2 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-cyprus/70 text-sm mb-1">Ashvini</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={formData.rating_ashvini || ''}
-                    onChange={e => setFormData({ ...formData, rating_ashvini: parseInt(e.target.value) || undefined })}
-                    className="w-full bg-white border border-cyprus/20 rounded p-2 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
-                  />
-                </div>
-
-              </div>
-
-              <div className="pt-4 flex gap-3">
                 <button
-                  type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 bg-cyprus/10 text-cyprus rounded-lg hover:bg-cyprus/20 transition-colors"
+                  className="text-cyprus/50 hover:text-cyprus"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-cyprus text-white rounded-lg hover:bg-cyprus/90 transition-colors"
-                >
+                  <X size={24} />
 
-                  {editingFeedback ? 'Update' : 'Create'}
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleModalSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-cyprus/70 text-sm mb-1">Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name || ''}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
+                  />
+
+                </div>
+                <div>
+                  <label className="block text-cyprus/70 text-sm mb-1">Department</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.department || ''}
+                    onChange={e => setFormData({ ...formData, department: e.target.value })}
+                    className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
+                  />
+
+                </div>
+                <div>
+                  <label className="block text-cyprus/70 text-sm mb-1">Feedback</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={formData.feedback || ''}
+                    onChange={e => setFormData({ ...formData, feedback: e.target.value })}
+                    className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
+                  />
+
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-cyprus/70 text-sm mb-1">Overall</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      value={formData.rating || ''}
+                      onChange={e => setFormData({ ...formData, rating: parseInt(e.target.value) || undefined })}
+                      className="w-full bg-white border border-cyprus/20 rounded p-2 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
+                    />
+                  </div>
+
+
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 py-2.5 bg-cyprus/10 text-cyprus rounded-lg hover:bg-cyprus/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-cyprus text-white rounded-lg hover:bg-cyprus/90 transition-colors"
+                  >
+
+                    {editingFeedback ? 'Update' : 'Create'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

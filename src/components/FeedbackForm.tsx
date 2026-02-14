@@ -19,8 +19,6 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     department: '',
     feedback: '',
     rating: undefined,
-    rating_ragul: undefined,
-    rating_ashvini: undefined,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -64,8 +62,6 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         department: '',
         feedback: '',
         rating: undefined,
-        rating_ragul: undefined,
-        rating_ashvini: undefined,
       });
 
       if (onSuccess) {
@@ -85,12 +81,7 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     setFormData({ ...formData, rating: value });
   };
 
-  const handleSpeakerRatingClick = (speaker: 'ragul' | 'ashvini', value: number) => {
-    setFormData({
-      ...formData,
-      [speaker === 'ragul' ? 'rating_ragul' : 'rating_ashvini']: value
-    });
-  };
+
 
   const isFormValid = formData.name && formData.department && formData.feedback;
 
@@ -196,47 +187,7 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
               </div>
 
 
-              <div className="space-y-3">
-                <label className="block text-cyprus font-medium">
-                  5. Speaker: Ragul <span className="text-cyprus/60 text-sm"></span>
-                </label>
-                <div className="flex gap-3 justify-center">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                      key={`ragul-${value}`}
-                      type="button"
-                      onClick={() => handleSpeakerRatingClick('ragul', value)}
-                      className={`w-16 h-16 rounded-xl font-bold text-lg transition-all transform hover:scale-110 ${formData.rating_ragul === value
-                        ? 'bg-cyprus text-sand-dune shadow-lg scale-110'
-                        : 'bg-white text-cyprus border border-cyprus/20 hover:bg-cyprus/5'
-                        }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <label className="block text-cyprus font-medium">
-                  6. Speaker: Ashvini <span className="text-cyprus/60 text-sm"></span>
-                </label>
-                <div className="flex gap-3 justify-center">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                      key={`ashvini-${value}`}
-                      type="button"
-                      onClick={() => handleSpeakerRatingClick('ashvini', value)}
-                      className={`w-16 h-16 rounded-xl font-bold text-lg transition-all transform hover:scale-110 ${formData.rating_ashvini === value
-                        ? 'bg-cyprus text-sand-dune shadow-lg scale-110'
-                        : 'bg-white text-cyprus border border-cyprus/20 hover:bg-cyprus/5'
-                        }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
 
               <div className="mt-8 pt-6 border-t border-cyprus/10 mb-6">
