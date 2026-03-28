@@ -9,10 +9,12 @@ import type { AppConfig } from '../types/config';
 
 interface FeedbackFormProps {
   onSuccess?: () => void;
+  onSubmitting?: (isSubmitting: boolean) => void;
 }
 
-export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
+export function FeedbackForm({ onSuccess, onSubmitting }: FeedbackFormProps) {
   const [config, setConfig] = useState<AppConfig>({});
+  const [speakers, setSpeakers] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<WorkshopFeedback>({
     name: '',
@@ -21,6 +23,7 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     rating: undefined,
     rating_ragul: undefined,
     rating_ashvini: undefined,
+    speaker_ratings: {},
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -29,7 +32,22 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
 
   useEffect(() => {
     fetchConfig();
+    fetchSpeakers();
   }, []);
+
+  const fetchSpeakers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('speakers')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setSpeakers(data || []);
+    } catch (err) {
+      console.error('Error fetching speakers:', err);
+    }
+  };
 
   const fetchConfig = async () => {
     try {
@@ -49,6 +67,7 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
 
     e.preventDefault();
     setIsSubmitting(true);
+    if (onSubmitting) onSubmitting(true);
     setError(null);
 
     try {
@@ -66,6 +85,7 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         rating: undefined,
         rating_ragul: undefined,
         rating_ashvini: undefined,
+        speaker_ratings: {},
       });
 
       if (onSuccess) {
@@ -77,7 +97,10 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit feedback');
     } finally {
-      setIsSubmitting(false);
+      setTimeout(() => {
+        setIsSubmitting(false);
+        if (onSubmitting) onSubmitting(false);
+      }, 5000);
     }
   };
 
@@ -85,10 +108,13 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     setFormData({ ...formData, rating: value });
   };
 
-  const handleSpeakerRatingClick = (speaker: 'ragul' | 'ashvini', value: number) => {
+  const handleSpeakerRatingClick = (speakerName: string, value: number) => {
     setFormData({
       ...formData,
-      [speaker === 'ragul' ? 'rating_ragul' : 'rating_ashvini']: value
+      speaker_ratings: {
+        ...formData.speaker_ratings,
+        [speakerName]: value
+      }
     });
   };
 
@@ -196,47 +222,28 @@ export function FeedbackForm({ onSuccess }: FeedbackFormProps) {
               </div>
 
 
-              <div className="space-y-3">
-                <label className="block text-cyprus font-medium">
-                  5. Speaker: Ragul <span className="text-cyprus/60 text-sm"></span>
-                </label>
-                <div className="flex gap-3 justify-center">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                      key={`ragul-${value}`}
-                      type="button"
-                      onClick={() => handleSpeakerRatingClick('ragul', value)}
-                      className={`w-16 h-16 rounded-xl font-bold text-lg transition-all transform hover:scale-110 ${formData.rating_ragul === value
-                        ? 'bg-cyprus text-sand-dune shadow-lg scale-110'
-                        : 'bg-white text-cyprus border border-cyprus/20 hover:bg-cyprus/5'
-                        }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
+              {speakers.map((speaker) => (
+                <div key={speaker.id} className="space-y-3">
+                  <label className="block text-cyprus font-medium">
+                    Speaker: {speaker.name}
+                  </label>
+                  <div className="flex gap-3 justify-center">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <button
+                        key={`${speaker.id}-${value}`}
+                        type="button"
+                        onClick={() => handleSpeakerRatingClick(speaker.name, value)}
+                        className={`w-16 h-16 rounded-xl font-bold text-lg transition-all transform hover:scale-110 ${formData.speaker_ratings?.[speaker.name] === value
+                          ? 'bg-cyprus text-sand-dune shadow-lg scale-110'
+                          : 'bg-white text-cyprus border border-cyprus/20 hover:bg-cyprus/5'
+                          }`}
+                      >
+                        {value}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="block text-cyprus font-medium">
-                  6. Speaker: Ashvini <span className="text-cyprus/60 text-sm"></span>
-                </label>
-                <div className="flex gap-3 justify-center">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                      key={`ashvini-${value}`}
-                      type="button"
-                      onClick={() => handleSpeakerRatingClick('ashvini', value)}
-                      className={`w-16 h-16 rounded-xl font-bold text-lg transition-all transform hover:scale-110 ${formData.rating_ashvini === value
-                        ? 'bg-cyprus text-sand-dune shadow-lg scale-110'
-                        : 'bg-white text-cyprus border border-cyprus/20 hover:bg-cyprus/5'
-                        }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              ))}
 
 
               <div className="mt-8 pt-6 border-t border-cyprus/10 mb-6">

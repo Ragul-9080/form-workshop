@@ -6,5 +6,6 @@ export interface WorkshopFeedback {
   rating?: number;
   rating_ragul?: number;
   rating_ashvini?: number;
+  speaker_ratings?: Record<string, number>;
   created_at?: string;
 }

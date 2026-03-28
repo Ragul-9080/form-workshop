@@ -4,6 +4,13 @@ import { supabase } from '../lib/supabase';
 import type { WorkshopFeedback } from '../types/feedback';
 import type { AppConfig } from '../types/config';
 
+export interface Speaker {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -13,6 +20,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [feedbacks, setFeedbacks] = useState<WorkshopFeedback[]>([]);
   const [config, setConfig] = useState<AppConfig>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'feedback' | 'speakers'>('feedback');
+  const [speakers, setSpeakers] = useState<Speaker[]>([]);
+  const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
+  const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
+  const [speakerName, setSpeakerName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'rating'>('recent');
   const [showModal, setShowModal] = useState(false);
@@ -23,7 +35,73 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   useEffect(() => {
     fetchFeedbacks();
     fetchConfig();
+    fetchSpeakers();
   }, []);
+
+  const fetchSpeakers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('speakers')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setSpeakers(data || []);
+    } catch (err) {
+      console.error('Error fetching speakers:', err);
+    }
+  };
+
+  const handleSpeakerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingSpeaker) {
+        const { error } = await supabase
+          .from('speakers')
+          .update({ name: speakerName })
+          .eq('id', editingSpeaker.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('speakers')
+          .insert([{ name: speakerName }]);
+        if (error) throw error;
+      }
+      setIsSpeakerModalOpen(false);
+      setSpeakerName('');
+      setEditingSpeaker(null);
+      fetchSpeakers();
+    } catch (err) {
+      console.error('Error saving speaker:', err);
+      alert('Failed to save speaker');
+    }
+  };
+
+  const toggleSpeakerActive = async (speaker: Speaker) => {
+    try {
+      const { error } = await supabase
+        .from('speakers')
+        .update({ is_active: !speaker.is_active })
+        .eq('id', speaker.id);
+      if (error) throw error;
+      fetchSpeakers();
+    } catch (err) {
+      console.error('Error toggling speaker:', err);
+    }
+  };
+
+  const deleteSpeaker = async (id: string) => {
+    if (!window.confirm('Are you sure? This will delete the speaker name but ratings in older feedback will remain as JSON data.')) return;
+    try {
+      const { error } = await supabase
+        .from('speakers')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      fetchSpeakers();
+    } catch (err) {
+      console.error('Error deleting speaker:', err);
+    }
+  };
 
   const fetchConfig = async () => {
     try {
@@ -55,8 +133,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       alert('Links updated successfully!');
       fetchConfig();
     } catch (err) {
-      console.error('Error saving config:', err);
-      alert(`Failed to save links: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('Detailed error saving config:', err);
+      if (err && typeof err === 'object' && 'code' in err && err.code === '401') {
+        alert('Authentication error: Your session may have expired or the API key is invalid. Please restart the dev server.');
+      } else {
+        alert(`Failed to save links: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
+      }
     } finally {
       setConfigLoading(false);
     }
@@ -213,32 +295,44 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 : 'N/A'}
             </p>
           </div>
-          <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
-            <p className="text-cyprus/60 text-sm mb-1">Avg. Ragul</p>
-            <p className="text-3xl font-bold text-cyprus">
-              {feedbacks.filter((f) => f.rating_ragul).length > 0
-                ? (
-                  feedbacks.reduce((acc, f) => acc + (f.rating_ragul || 0), 0) /
-                  feedbacks.filter((f) => f.rating_ragul).length
-                ).toFixed(1)
-                : 'N/A'}
-            </p>
-          </div>
-          <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
-            <p className="text-cyprus/60 text-sm mb-1">Avg. Ashvini</p>
-            <p className="text-3xl font-bold text-cyprus">
-              {feedbacks.filter((f) => f.rating_ashvini).length > 0
-                ? (
-                  feedbacks.reduce((acc, f) => acc + (f.rating_ashvini || 0), 0) /
-                  feedbacks.filter((f) => f.rating_ashvini).length
-                ).toFixed(1)
-                : 'N/A'}
-            </p>
-          </div>
+          {speakers.filter(s => s.is_active).map(speaker => {
+            const speakerFeedbacks = feedbacks.filter(f => f.speaker_ratings && f.speaker_ratings[speaker.name]);
+            const avg = speakerFeedbacks.length > 0
+              ? (speakerFeedbacks.reduce((acc, f) => acc + (f.speaker_ratings![speaker.name] || 0), 0) / speakerFeedbacks.length).toFixed(1)
+              : 'N/A';
+            return (
+              <div key={speaker.id} className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
+                <p className="text-cyprus/60 text-sm mb-1">Avg. {speaker.name}</p>
+                <p className="text-3xl font-bold text-cyprus">{avg}</p>
+              </div>
+            );
+          })}
           <div className="bg-white border border-cyprus/10 rounded-lg p-4 shadow-sm">
             <p className="text-cyprus/60 text-sm mb-1">With Ratings</p>
             <p className="text-3xl font-bold text-cyprus">{feedbacks.filter((f) => f.rating).length}</p>
           </div>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex gap-4 mb-6 border-b border-cyprus/10">
+          <button
+            onClick={() => setActiveTab('feedback')}
+            className={`pb-3 px-4 font-bold transition-all ${activeTab === 'feedback'
+              ? 'text-cyprus border-b-2 border-cyprus'
+              : 'text-cyprus/40 hover:text-cyprus/60'
+              }`}
+          >
+            Feedback Responses
+          </button>
+          <button
+            onClick={() => setActiveTab('speakers')}
+            className={`pb-3 px-4 font-bold transition-all ${activeTab === 'speakers'
+              ? 'text-cyprus border-b-2 border-cyprus'
+              : 'text-cyprus/40 hover:text-cyprus/60'
+              }`}
+          >
+            Manage Speakers
+          </button>
         </div>
 
       </div>
@@ -297,7 +391,100 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </div>
 
 
-      <div className="bg-white border border-cyprus/10 rounded-lg p-6 mb-6 shadow-sm">
+      {activeTab === 'speakers' ? (
+        <div className="bg-white border border-cyprus/10 rounded-lg p-6 mb-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-cyprus">Speakers Management</h2>
+            <button
+              onClick={() => {
+                setEditingSpeaker(null);
+                setSpeakerName('');
+                setIsSpeakerModalOpen(true);
+              }}
+              className="bg-cyprus text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyprus/90 transition-all shadow-md"
+            >
+              <Plus size={20} />
+              Add New Speaker
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {speakers.map((speaker) => (
+              <div key={speaker.id} className="border border-cyprus/10 rounded-xl p-4 flex justify-between items-center hover:shadow-md transition-all">
+                <div>
+                  <h3 className="font-bold text-cyprus">{speaker.name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`w-2 h-2 rounded-full ${speaker.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-xs text-cyprus/60">{speaker.is_active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => toggleSpeakerActive(speaker)}
+                    className={`p-2 rounded-lg transition-colors ${speaker.is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                    title={speaker.is_active ? 'Deactivate' : 'Activate'}
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingSpeaker(speaker);
+                      setSpeakerName(speaker.name);
+                      setIsSpeakerModalOpen(true);
+                    }}
+                    className="p-2 bg-cyprus/5 text-cyprus hover:bg-cyprus/10 rounded-lg transition-colors"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => deleteSpeaker(speaker.id)}
+                    className="p-2 bg-red-50 text-red-400 hover:text-red-600 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {isSpeakerModalOpen && (
+            <div className="fixed inset-0 bg-cyprus/20 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+              <div className="bg-white border border-cyprus/10 rounded-xl w-full max-w-sm p-6 shadow-2xl">
+                <h2 className="text-xl font-bold text-cyprus mb-4">
+                  {editingSpeaker ? 'Edit Speaker' : 'Add New Speaker'}
+                </h2>
+                <form onSubmit={handleSpeakerSubmit} className="space-y-4">
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="Speaker Name"
+                    value={speakerName}
+                    onChange={(e) => setSpeakerName(e.target.value)}
+                    className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsSpeakerModalOpen(false)}
+                      className="flex-1 py-2 bg-cyprus/10 text-cyprus rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 bg-cyprus text-white rounded-lg"
+                    >
+                      {editingSpeaker ? 'Update' : 'Add'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="bg-white border border-cyprus/10 rounded-lg p-6 mb-6 shadow-sm">
         <div className="flex gap-4 mb-6">
           <button
             onClick={fetchFeedbacks}
@@ -409,6 +596,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           </div>
         )}
       </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (

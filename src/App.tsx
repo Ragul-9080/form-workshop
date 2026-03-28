@@ -4,6 +4,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLogin } from './components/AdminLogin';
 
 import { ThankYou } from './components/ThankYou';
+import { LoadingPage } from './components/LoadingPage';
 
 type AppView = 'form' | 'admin-login' | 'admin-dashboard' | 'thank-you';
 
@@ -11,13 +12,22 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>('form');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showLoadingPage, setShowLoadingPage] = useState(false);
   const [keyPresses, setKeyPresses] = useState<string[]>([]);
 
   useEffect(() => {
+    // Show loading page on initial mount for 5 seconds
+    setShowLoadingPage(true);
+    const timer = setTimeout(() => {
+      setShowLoadingPage(false);
+    }, 5000);
+
     const adminSession = localStorage.getItem('admin_session');
     if (adminSession) {
       setCurrentView('admin-dashboard');
     }
+
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -38,6 +48,7 @@ function App() {
     setIsLoading(true);
     setLoginError(null);
 
+    setShowLoadingPage(true);
     setTimeout(() => {
       if (password === 'admin123') {
         localStorage.setItem('admin_session', 'active');
@@ -47,7 +58,8 @@ function App() {
         setLoginError('Invalid password. Please try again.');
       }
       setIsLoading(false);
-    }, 500);
+      setShowLoadingPage(false);
+    }, 5000);
   };
 
   const handleAdminLogout = () => {
@@ -58,7 +70,12 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      {currentView === 'form' && <FeedbackForm onSuccess={() => setCurrentView('thank-you')} />}
+      {currentView === 'form' && (
+        <FeedbackForm
+          onSuccess={() => setCurrentView('thank-you')}
+          onSubmitting={(loading) => setShowLoadingPage(loading)}
+        />
+      )}
       {currentView === 'thank-you' && (
         <ThankYou onBackToHome={() => setCurrentView('form')} />
       )}
@@ -72,6 +89,7 @@ function App() {
       {currentView === 'admin-dashboard' && (
         <AdminDashboard onLogout={handleAdminLogout} />
       )}
+      {showLoadingPage && <LoadingPage />}
     </div>
   );
 }
