@@ -9,6 +9,7 @@ export interface Speaker {
   name: string;
   is_active: boolean;
   created_at?: string;
+  linkedin_url?: string;
 }
 
 
@@ -25,6 +26,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [speakerName, setSpeakerName] = useState('');
+  const [speakerLinkedin, setSpeakerLinkedin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'rating'>('recent');
   const [showModal, setShowModal] = useState(false);
@@ -57,17 +59,18 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       if (editingSpeaker) {
         const { error } = await supabase
           .from('speakers')
-          .update({ name: speakerName })
+          .update({ name: speakerName, linkedin_url: speakerLinkedin })
           .eq('id', editingSpeaker.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('speakers')
-          .insert([{ name: speakerName }]);
+          .insert([{ name: speakerName, linkedin_url: speakerLinkedin }]);
         if (error) throw error;
       }
       setIsSpeakerModalOpen(false);
       setSpeakerName('');
+      setSpeakerLinkedin('');
       setEditingSpeaker(null);
       fetchSpeakers();
     } catch (err) {
@@ -399,6 +402,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               onClick={() => {
                 setEditingSpeaker(null);
                 setSpeakerName('');
+                setSpeakerLinkedin('');
                 setIsSpeakerModalOpen(true);
               }}
               className="bg-cyprus text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyprus/90 transition-all shadow-md"
@@ -430,6 +434,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     onClick={() => {
                       setEditingSpeaker(speaker);
                       setSpeakerName(speaker.name);
+                      setSpeakerLinkedin(speaker.linkedin_url || '');
                       setIsSpeakerModalOpen(true);
                     }}
                     className="p-2 bg-cyprus/5 text-cyprus hover:bg-cyprus/10 rounded-lg transition-colors"
@@ -461,6 +466,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     placeholder="Speaker Name"
                     value={speakerName}
                     onChange={(e) => setSpeakerName(e.target.value)}
+                    className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
+                  />
+                  <input
+                    type="url"
+                    placeholder="LinkedIn Profile URL (optional)"
+                    value={speakerLinkedin}
+                    onChange={(e) => setSpeakerLinkedin(e.target.value)}
                     className="w-full bg-white border border-cyprus/20 rounded lg p-2.5 text-cyprus focus:outline-none focus:ring-1 focus:ring-cyprus"
                   />
                   <div className="flex gap-3">

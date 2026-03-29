@@ -95,7 +95,10 @@ export function FeedbackForm({ onSuccess, onSubmitting }: FeedbackFormProps) {
         setTimeout(() => setIsSuccess(false), 5000);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit feedback');
+      console.error('Submission error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit feedback';
+      const details = (err as any)?.details || (err as any)?.hint || '';
+      setError(`${errorMessage}${details ? `. Details: ${details}` : ''}`);
     } finally {
       setTimeout(() => {
         setIsSubmitting(false);
@@ -224,9 +227,23 @@ export function FeedbackForm({ onSuccess, onSubmitting }: FeedbackFormProps) {
 
               {speakers.map((speaker) => (
                 <div key={speaker.id} className="space-y-3">
-                  <label className="block text-cyprus font-medium">
-                    Speaker: {speaker.name}
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-cyprus font-medium">
+                      Speaker: {speaker.name}
+                    </label>
+                    {speaker.linkedin_url && (
+                      <a
+                        href={speaker.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0a66c2] rounded-lg text-white text-xs font-semibold hover:opacity-90 transition-all transform hover:scale-105 shadow-sm"
+                        title={`Connect with ${speaker.name} on LinkedIn`}
+                      >
+                        <Linkedin size={14} fill="currentColor" />
+                        LinkedIn
+                      </a>
+                    )}
+                  </div>
                   <div className="flex gap-3 justify-center">
                     {[1, 2, 3, 4, 5].map((value) => (
                       <button
